@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BoothFinder | Kurasi Tenant Event</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .hero { background: linear-gradient(135deg, #0d6efd, #0dcaf0); color: white; padding: 40px 0; border-radius: 0 0 20px 20px; margin-bottom: 30px;}
+    </style>
+</head>
+<body>
+
+<div class="hero text-center">
+    <div class="container">
+        <h1 class="fw-bold">🎪 BoothFinder</h1>
+        <p class="lead">Smart Tenant Curation System</p>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Masukkan Kriteria Tenant</h5>
+            <form id="searchForm">
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <input type="text" id="query" class="form-control form-control-lg" placeholder="Contoh: Kopi susu gula aren kekinian..." required>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="number" id="priceLimit" class="form-control" placeholder="Maksimal Harga Produk (opsional, misal: 30000)">
+                    </div>
+                    <div class="col-md-6">
+                        <select id="sektor" class="form-select">
+                            <option value="Semua">Semua Sektor (Campuran)</option>
+                            <option value="F&B">F&B (Makanan & Minuman)</option>
+                            <option value="Fashion & Lifestyle">Fashion & Lifestyle</option>
+                        </select>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Cari Rekomendasi 🚀</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <h4 class="mb-3" id="resultTitle" style="display: none;">Hasil Rekomendasi Teratas:</h4>
+    <div id="loading" class="text-center" style="display: none;">
+        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+    </div>
+    
+    <div class="row" id="resultsContainer">
+        </div>
+</div>
+
+<script>
+document.getElementById('searchForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // Mencegah web reload saat tombol ditekan
+    
+    const query = document.getElementById('query').value;
+    const price_limit = document.getElementById('priceLimit').value;
+    const sektor = document.getElementById('sektor').value;
+    
+    const resultsContainer = document.getElementById('resultsContainer');
+    const loading = document.getElementById('loading');
+    const resultTitle = document.getElementById('resultTitle');
+    
+    // Reset tampilan
+    resultsContainer.innerHTML = '';
+    loading.style.display = 'block';
+    resultTitle.style.display = 'none';
+
+    // Mengirim data ke Python backend menggunakan Fetch API
+    fetch('/api/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, price_limit, sektor })
+    })
+    .then(response => response.json())
+    .then(data => {
+        loading.style.display = 'none';
+        
+        if (data.error) {
+            resultsContainer.innerHTML = `<div class="alert alert-danger w-100">${data.error}</div>`;
+            return;
+        }
+
+        const recs = data.recommendations;
+        
+        if (recs.length === 0) {
+            resultsContainer.innerHTML = `<div class="alert alert-warning w-100">Maaf, tidak ada tenant yang cocok dengan kriteria tersebut. Coba kata kunci lain!</div>`;
+            return;
+        }
+
+        resultTitle.style.display = 'block';
+        
+        // Looping untuk membuat desain "Kartu" bagi setiap tenant
+        recs.forEach((item, index) => {
+            const badgeColor = item.sektor === 'F&B' ? 'bg-danger' : 'bg-success';
+            
+            // Mengubah format harga jadi Rupiah
+            const hargaRupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.harga);
+            const persenAkurasi = (item.score * 100).toFixed(1); // Ubah skor ke persen
+
+            const cardHtml = `
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="card-body">
+                            <span class="badge ${badgeColor} mb-2">${item.sektor}</span>
+                            <h5 class="card-title fw-bold">#${index + 1} ${item.nama_tenant}</h5>
+                            <p class="card-text text-muted mb-1">💸 Target Budget: <strong>${hargaRupiah}</strong></p>
+                            <p class="card-text text-muted">🎯 Kecocokan: <strong>${persenAkurasi}%</strong></p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            resultsContainer.innerHTML += cardHtml;
+        });
+    })
+    .catch(error => {
+        loading.style.display = 'none';
+        resultsContainer.innerHTML = `<div class="alert alert-danger w-100">Terjadi kesalahan pada sistem backend.</div>`;
+        console.error('Error:', error);
+    });
+});
+</script>
+</body>
+</html>

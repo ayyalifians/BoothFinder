@@ -1,185 +1,354 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BoothFinder | Sistem Manajemen Kurasi Tenant</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>BoothFinder | AI Tenant Curation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        body { background-color: #f8f9fa; overflow-x: hidden; }
-        .sidebar { min-height: 100vh; background-color: #fff; border-right: 1px solid #dee2e6; }
-        .nav-link { color: #495057; cursor: pointer; border-radius: 8px; margin-bottom: 5px; }
-        .nav-link.active { background-color: #0d6efd; color: #fff; }
-        .nav-link:hover:not(.active) { background-color: #e9ecef; }
-        .chip { cursor: pointer; transition: 0.2s; }
-        .chip:hover { transform: scale(1.05); }
-        .card-tenant { transition: 0.3s; }
-        .card-tenant:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; transform: translateY(-3px); }
-        .view-section { display: none; }
+        /* =========================================
+           ✨ TEMA 3-LAYER & GEN-Z AESTHETICS ✨
+           ========================================= */
+        :root[data-bs-theme="light"] {
+            --bg-main: #F4F7FC;          
+            --bg-card: #FFFFFF;          
+            --sidebar-bg: #1A2235;       
+            --sidebar-text: #F8F9FA;
+            --text-main: #2B3445;
+            --text-muted: #7D879C;
+            --border-color: #E3E9F2;
+            --brand-accent: #FCA311;     
+            --brand-blue: #4CC9F0;       
+            --modal-bg: #FFFFFF;
+            --modal-text: #2B3445;
+        }
+
+        :root[data-bs-theme="dark"] {
+            --bg-main: #0B0F19;          
+            --bg-card: #151D2C;          
+            --sidebar-bg: #070A11;       
+            --sidebar-text: #F8F9FA;
+            --text-main: #F2F1EE;
+            --text-muted: #9CA3AF;
+            --border-color: #1E293B;
+            --brand-accent: #FCA311;
+            --brand-blue: #4CC9F0;
+            --modal-bg: #151D2C;
+            --modal-text: #F2F1EE;
+        }
+
+        body { 
+            background-color: var(--bg-main); 
+            color: var(--text-main); 
+            font-family: 'Inter', 'Segoe UI', sans-serif; 
+            transition: background-color 0.4s ease, color 0.4s ease; 
+            overflow-x: hidden; 
+        }
+        
+        /* Glassmorphism & Bento Box Style */
+        .card { 
+            background-color: var(--bg-card); 
+            border: 1px solid var(--border-color); 
+            color: var(--text-main); 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+        }
+        
+        /* Logo Gradient Premium */
+        .logo-gradient {
+            background: linear-gradient(135deg, var(--brand-accent), #61a3e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+        .logo-icon {
+            background: linear-gradient(135deg, var(--brand-blue), #61a3e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Sidebar Navigasi */
+        .sidebar { width: 260px; height: 100vh; position: fixed; z-index: 1000; background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color); transition: transform 0.3s ease; color: var(--sidebar-text); }
+        .main-content { margin-left: 260px; transition: margin-left 0.3s; padding-top: 15px; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        .nav-link { color: #9CA3AF; border-radius: 12px; margin-bottom: 8px; font-weight: 500; transition: all 0.2s; }
+        .nav-link:hover { background-color: rgba(255,255,255,0.08); color: #FFF; transform: translateX(5px); }
+        .nav-link.active { background-color: rgba(252, 163, 17, 0.15); color: var(--brand-accent) !important; font-weight: 700; box-shadow: inset 4px 0 0 var(--brand-accent); }
+        
+        /* Tombol Gen-Z (Pill shape, smooth hover) */
+        .btn-primary { background: linear-gradient(135deg, var(--brand-accent), #FFB703); border: none; color: #000; font-weight: 700; border-radius: 50px; box-shadow: 0 4px 15px rgba(252, 163, 17, 0.3); transition: 0.3s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(252, 163, 17, 0.5); color: #000; }
+        
+        /* Suggestion Chips ala Shopee/Netflix */
+        .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .chip { cursor: pointer; border-radius: 50px; padding: 6px 16px; border: 1.5px solid var(--border-color); color: var(--text-muted); font-size: 0.85rem; font-weight: 600; background: var(--bg-card); transition: all 0.2s; }
+        .chip:hover { border-color: var(--brand-blue); color: var(--brand-blue); background: rgba(76, 201, 240, 0.1); transform: translateY(-2px); }
+        
+        /* Tenant Card Hover */
+        .card-tenant:hover { transform: translateY(-8px); border-color: var(--brand-accent); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        .chart-container { position: relative; height: 220px; width: 100%; }
+        
+        /* Routing SPA */
+        .view-section { display: none; animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
         .view-section.active { display: block; }
-        #compareBtn { position: fixed; bottom: 20px; right: 20px; z-index: 1000; display: none; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Form Override */
+        .form-control, .form-select { background-color: var(--bg-main); border: 1.5px solid var(--border-color); color: var(--text-main); border-radius: 12px; padding: 12px 16px; transition: 0.3s; }
+        .form-control:focus, .form-select:focus { border-color: var(--brand-blue); box-shadow: 0 0 0 4px rgba(76, 201, 240, 0.15); background-color: var(--bg-card); }
+        
+        /* Floating Button */
+        #compareBtn { position: fixed; bottom: 30px; right: 30px; z-index: 1000; display: none; border-radius: 50px; padding: 14px 28px; background: linear-gradient(135deg, #61a3e1, #a8bbcd); color: #FFF; font-weight: bold; border: none; box-shadow: 0 10px 25px rgba(89, 171, 237, 0.404); transition: 0.3s; }
+        #compareBtn:hover { transform: scale(1.05) translateY(-5px); }
+
+        /* Modal Fix (Aman untuk Light/Dark Mode) */
+        .modal-content { background-color: var(--modal-bg); color: var(--modal-text); border: 1px solid var(--border-color); border-radius: 24px; overflow: hidden; }
+
+        /* Mobile Glassmorphism Topbar */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.show { transform: translateX(0); }
+            .main-content { margin-left: 0; padding-top: 80px; }
+            .mobile-topbar { display: flex !important; position: fixed; top: 0; width: 100%; z-index: 999; background-color: rgba(26, 34, 53, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        }
+        .mobile-topbar { display: none; padding: 16px 24px; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
 
+<div class="mobile-topbar shadow-sm">
+    <h5 class="mb-0 logo-gradient"><i class="fas fa-layer-group logo-icon me-2"></i> BoothFinder</h5>
+    <button class="btn btn-sm text-white border-0" onclick="toggleMobileSidebar()"><i class="fas fa-bars fs-4"></i></button>
+</div>
+
 <div class="d-flex">
-    <div class="sidebar p-3 d-flex flex-column" style="width: 250px;">
-        <h4 class="fw-bold text-primary mb-4"><i class="fas fa-campground"></i> BoothFinder</h4>
-        <ul class="nav flex-column mb-auto">
-            <li><a class="nav-link active" onclick="switchView('dashboard')"><i class="fas fa-chart-pie me-2"></i> Dashboard</a></li>
-            <li><a class="nav-link" onclick="switchView('rekomendasi')"><i class="fas fa-search me-2"></i> Cari Rekomendasi</a></li>
-            <li><a class="nav-link" onclick="switchView('shortlist')"><i class="fas fa-bookmark me-2"></i> Shortlist <span id="shortlistBadge" class="badge bg-danger ms-2">0</span></a></li>
+    <div class="sidebar p-4 d-flex flex-column" id="sidebar">
+        <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+            <h4 class="mb-0 logo-gradient"><i class="fas fa-layer-group logo-icon me-2"></i> BoothFinder</h4>
+            <button class="btn btn-link text-white d-md-none p-0" onclick="toggleMobileSidebar()"><i class="fas fa-times fs-4"></i></button>
+        </div>
+        
+        <div class="form-check form-switch mb-4 p-3 rounded-4" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+            <input class="form-check-input ms-1" type="checkbox" id="themeToggle" checked onchange="toggleTheme()">
+            <label class="form-check-label small ms-2 fw-bold text-white" for="themeToggle">✨ Dark Theme</label>
+        </div>
+
+        <ul class="nav flex-column mb-auto gap-1">
+            <li><a class="nav-link active px-3 py-2" onclick="switchView('beranda')"><i class="fas fa-home me-3 w-20px"></i> Beranda</a></li>
+            <li><a class="nav-link px-3 py-2" onclick="switchView('eksplorasi')"><i class="fas fa-chart-pie me-3 w-20px"></i> Eksplorasi Data</a></li>
+            <li><a class="nav-link px-3 py-2" onclick="switchView('rekomendasi')"><i class="fas fa-sparkles me-3 w-20px"></i> Mesin Rekomendasi</a></li>
+            <li><a class="nav-link px-3 py-2" onclick="switchView('shortlist')"><i class="fas fa-bookmark me-3 w-20px"></i> Shortlist <span id="shortlistBadge" class="badge bg-danger ms-2 rounded-pill">0</span></a></li>
         </ul>
-        <hr>
-        <small class="text-muted">Platform Kurasi Tenant<br>Event & Pameran</small>
     </div>
 
-    <div class="flex-grow-1 p-4">
-
-        <div id="dashboard" class="view-section active">
-            <h2 class="fw-bold mb-4">Dashboard Data Tenant</h2>
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="card text-white bg-primary shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Total UMKM Terdaftar</h5>
-                            <h2 class="display-4 fw-bold">2,500+</h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card text-white bg-success shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Sektor F&B</h5>
-                            <h2 class="display-4 fw-bold">1,800+</h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card text-white bg-info shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Fashion & Lifestyle</h5>
-                            <h2 class="display-4 fw-bold">700+</h2>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="alert alert-secondary">
-                <i class="fas fa-info-circle"></i> Gunakan menu <strong>Cari Rekomendasi</strong> untuk mulai memfilter data UMKM menggunakan algoritma cerdas kami.
-            </div>
-        </div>
-
-        <div id="rekomendasi" class="view-section">
-            <h2 class="fw-bold mb-4">Mesin Rekomendasi Tenant</h2>
+    <div class="main-content flex-grow-1 p-4 w-100">
+        <div class="container-fluid p-0">
             
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <form id="searchForm">
-                        <div class="row g-3">
-                            <div class="col-md-8">
-                                <label class="form-label fw-bold">Kriteria Pencarian</label>
-                                <input type="text" id="query" class="form-control form-control-lg" placeholder="Ketik kriteria... (Cth: Nasi pedas, kemeja pria)" required>
-                                
-                                <div class="mt-2">
-                                    <span class="text-muted small me-2">Coba cari:</span>
-                                    <span class="badge bg-outline-primary border text-primary chip" onclick="setQuery('Es Teler')">🍧 Es Teler</span>
-                                    <span class="badge bg-outline-primary border text-primary chip" onclick="setQuery('Donat')">🍩 Donat</span>
-                                    <span class="badge bg-outline-primary border text-primary chip" onclick="setQuery('Kopi Susu Gula Aren')">☕ Kopi Susu</span>
-                                    <span class="badge bg-outline-primary border text-primary chip" onclick="setQuery('Kemeja Flanel')">👕 Kemeja Flanel</span>
+            <div id="beranda" class="view-section active">
+                <!-- Hero Section (Dibuat Lebih Ramping) -->
+                <div class="card border-0 mb-3 overflow-hidden position-relative shadow-sm" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: #F8F9FA; border-radius: 16px;">
+                    <div class="position-absolute top-0 end-0 opacity-25" style="transform: translate(10%, -20%);"><i class="fas fa-microchip fa-7x text-primary"></i></div>
+                    <div class="card-body p-3 p-md-4 position-relative z-1">
+                        <span class="badge bg-primary text-dark mb-2 px-2 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">Smart Event Solution - Powered by NLP Engine 🚀</span>
+                        <h2 class="fs-4 fw-bold mb-2" style="color: #FFF;">Presisi Algoritma, <br><span style="color: var(--brand-accent);">Kurasi Lebih Akurat.</span></h2>
+                        <p class="mb-3" style="color: #9CA3AF; max-width: 650px; font-size: 0.85rem; line-height: 1.4;">Otomatiskan kurasi UMKM Anda dengan AI. Mesin TF-IDF & Cosine Similarity kami menghitung kecocokan kriteria secara matematis, memberikan rekomendasi paling akurat hanya dalam sekejap.</p>
+                        <button class="btn btn-primary px-4 py-2" style="font-size: 0.9rem;" onclick="switchView('rekomendasi')">Mulai Eksekusi Kurasi <i class="fas fa-rocket ms-1"></i></button>
+                    </div>
+                </div>
+
+                <!-- Overview Data (Jarak dan Ukuran Huruf Diperkecil) -->
+                <h6 class="fw-bold mb-2">Overview Data Tersedia 📦</h6>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-4">
+                        <div class="card h-100 shadow-sm" style="border-left: 4px solid var(--brand-blue); border-radius: 12px;">
+                            <div class="card-body p-2 px-3">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;">Total Database Tenant</span>
+                                <h4 class="fw-bold mb-0">2,500+</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 shadow-sm" style="border-left: 4px solid #25a3f7; border-radius: 12px;">
+                            <div class="card-body p-2 px-3">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;">Kategori Food & Beverage 🍔</span>
+                                <h4 class="fw-bold mb-0">1,800+</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 shadow-sm" style="border-left: 4px solid var(--brand-accent); border-radius: 12px;">
+                            <div class="card-body p-2 px-3">
+                                <span class="text-uppercase text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;">Fashion & Lifestyle 👕</span>
+                                <h4 class="fw-bold mb-0">700+</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panduan Penggunaan (Dibuat Lebih Compact) -->
+                <h6 class="fw-bold mb-2">Panduan Penggunaan 📖</h6>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <div class="card h-100 p-3 text-center border-0 shadow-sm" style="border-radius: 12px;">
+                            <i class="fas fa-chart-pie fs-4 mb-2 text-brand"></i>
+                            <h6 class="fw-bold mb-1" style="font-size: 0.85rem;">1. Cek Eksplorasi Data</h6>
+                            <p class="mb-0" style="color: var(--text-muted); font-size: 0.75rem; line-height: 1.3;">Lihat sebaran sektor dan rentang harga UMKM di menu Eksplorasi Data untuk gambaran budget.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 p-3 text-center border-0 shadow-sm" style="border-radius: 12px;">
+                            <i class="fas fa-keyboard fs-4 mb-2 text-brand"></i>
+                            <h6 class="fw-bold mb-1" style="font-size: 0.85rem;">2. Masukkan Kriteria</h6>
+                            <p class="mb-0" style="color: var(--text-muted); font-size: 0.75rem; line-height: 1.3;">Ketik deskripsi tenant impianmu (misal: kopi susu kekinian) lalu atur batas harganya.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100 p-3 text-center border-0 shadow-sm" style="border-radius: 12px;">
+                            <i class="fas fa-download fs-4 mb-2 text-brand"></i>
+                            <h6 class="fw-bold mb-1" style="font-size: 0.85rem;">3. Simpan & Unduh</h6>
+                            <p class="mb-0" style="color: var(--text-muted); font-size: 0.75rem; line-height: 1.3;">Klik 'Simpan' pada tenant yang cocok, lalu unduh daftar kandidat CSV di menu Shortlist.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="eksplorasi" class="view-section">
+                <h3 class="fw-bold mb-4">Eksplorasi Dataset 📈</h3>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-5"><div class="card h-100 p-4"><h6 class="fw-bold text-center mb-3">Distribusi Sektor</h6><div class="chart-container"><canvas id="pieChart"></canvas></div></div></div>
+                    <div class="col-md-7"><div class="card h-100 p-4"><h6 class="fw-bold text-center mb-3">Distribusi Rentang Harga Rata-rata</h6><div class="chart-container"><canvas id="barChart"></canvas></div></div></div>
+                </div>
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between mb-3 align-items-center"><h6 class="fw-bold mb-0"><i class="fas fa-list-ul me-2" style="color: var(--brand-blue);"></i>Katalog Prapemrosesan (Real Data)</h6><span class="badge bg-success rounded-pill px-3">Top 40 Data</span></div>
+                    <div class="table-responsive border rounded-3" style="max-height: 400px; overflow-y: auto; border-color: var(--border-color) !important;">
+                        <table class="table table-hover mb-0">
+                            <thead class="sticky-top" style="background-color: var(--bg-card); color: var(--text-main); box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <tr><th class="py-3">No</th><th class="py-3">Nama Tenant</th><th class="py-3">Sektor</th><th class="py-3">Rata-rata Harga</th></tr>
+                            </thead>
+                            <tbody id="catalogTableBody">
+                                <tr><td colspan="4" class="text-center py-5" id="tableLoadingText"><div class="spinner-border text-primary spinner-border-sm me-2"></div> Memuat data dari server...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="rekomendasi" class="view-section">
+                <h3 class="fw-bold mb-4">Mesin Rekomendasi 🔮</h3>
+                <div class="card mb-4 border-0">
+                    <div class="card-body p-4 p-md-5">
+                        <form id="searchForm">
+                            <div class="row g-4">
+                                <div class="col-md-8">
+                                    <label class="form-label fw-bold" style="color: var(--text-muted);">Deskripsi Spesifik Tenant ✍️</label>
+                                    <input type="text" id="query" class="form-control form-control-lg" placeholder="Cth: Kopi susu aren seger, Kemeja flanel..." required>
+                                    
+                                    <div class="chips-container mt-3">
+                                        <span class="small fw-bold me-2 mt-1" style="color: var(--text-muted);">Coba cari:</span>
+                                        <span class="chip" onclick="setQuery('Kopi Susu Kekinian')">☕ Kopi Susu</span>
+                                        <span class="chip" onclick="setQuery('Cemilan Pedas Gurih')">🌶️ Cemilan Pedas</span>
+                                        <span class="chip" onclick="setQuery('Kemeja Flanel Pria')">👕 Kemeja Flanel</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold" style="color: var(--text-muted);">Filter Sektor 🏷️</label>
+                                    <select id="sektor" class="form-select form-select-lg">
+                                        <option value="Semua">Semua Sektor</option>
+                                        <option value="F&B">Food & Beverage</option>
+                                        <option value="Fashion & Lifestyle">Fashion & Lifestyle</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 mt-4">
+                                    <label class="form-label fw-bold" style="color: var(--text-muted);">Limit Budget / Harga (Rp) 💰</label>
+                                    <div class="d-flex align-items-center gap-3 bg-main p-3 rounded-4" style="background: var(--bg-main); border: 1px solid var(--border-color);">
+                                        <input type="range" class="form-range flex-grow-1" id="priceRange" min="10000" max="250000" step="5000" value="50000" oninput="syncPrice(this.value)">
+                                        <input type="number" class="form-control text-center fw-bold" style="width: 140px; font-size: 1.1rem; color: var(--brand-accent); background: var(--bg-card);" id="priceInput" value="50000" oninput="syncPrice(this.value, true)">
+                                    </div>
+                                </div>
+                                <div class="col-12 text-end mt-4">
+                                    <button type="submit" class="btn btn-primary btn-lg px-5"><i class="fas fa-search me-2"></i> Cari Relevansi 🚀</button>
                                 </div>
                             </div>
+                        </form>
+                    </div>
+                </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Sektor Bisnis</label>
-                                <select id="sektor" class="form-select form-select-lg">
-                                    <option value="Semua">Semua Kategori</option>
-                                    <option value="F&B">F&B (Makanan & Minuman)</option>
-                                    <option value="Fashion & Lifestyle">Fashion & Lifestyle</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-12 mt-4">
-                                <label class="form-label fw-bold">Batas Anggaran / Harga Maksimal Produk</label>
-                                <div class="row align-items-center">
-                                    <div class="col-md-9">
-                                        <input type="range" class="form-range" id="priceRange" min="5000" max="500000" step="5000" value="50000" oninput="syncPrice(this.value)">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="input-group">
-                                            <span class="input-group-text">Rp</span>
-                                            <input type="number" class="form-control" id="priceInput" value="50000" oninput="syncPrice(this.value, true)">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-12 text-end mt-3">
-                                <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-magic"></i> Proses Rekomendasi</button>
-                            </div>
-                        </div>
-                    </form>
+                <div id="resultsArea" style="display: none;">
+                    <h5 class="fw-bold mb-3">✨ Top Rekomendasi Hasil Kurasi</h5>
+                    <div class="row g-3" id="resultsContainer"></div>
+                    <div id="emptyState" class="text-center p-5 d-none">
+                        <i class="fas fa-ghost fa-3x mb-3" style="color: var(--text-muted);"></i>
+                        <h5 class="fw-bold">Wah, tenant-nya nggak ketemu nih 🥲</h5>
+                        <p style="color: var(--text-muted);">Coba ubah kata kunci atau naikin batas budget kamu ya.</p>
+                    </div>
+                </div>
+                
+                <div id="loading" class="text-center my-5 d-none">
+                    <div class="spinner-grow text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                    <p class="fw-bold text-muted">AI sedang menghitung jarak Cosine Similarity (tingkat kecocokan)... ⏳</p>
                 </div>
             </div>
 
-            <div id="resultsArea" style="display: none;">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="mb-0">Hasil Kurasi Teratas</h4>
-                    <select id="sortOption" class="form-select w-auto" onchange="renderResults()">
-                        <option value="relevansi">Urutkan: Relevansi Terbaik</option>
-                        <option value="harga_murah">Urutkan: Harga Terendah</option>
-                        <option value="harga_mahal">Urutkan: Harga Tertinggi</option>
-                    </select>
+            <div id="shortlist" class="view-section">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-bold mb-0">Keranjang Shortlist 🛒</h3>
+                    <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onclick="exportCSV()"><i class="fas fa-file-excel me-2"></i> Ekspor CSV</button>
                 </div>
-                <div class="row" id="resultsContainer"></div>
-            </div>
-            
-            <div id="loading" class="text-center my-5" style="display: none;">
-                <div class="spinner-border text-primary" role="status"></div>
-                <p class="mt-2 text-muted">Sedang menganalisis teks dengan algoritma TF-IDF...</p>
-            </div>
-        </div>
-
-        <div id="shortlist" class="view-section">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold mb-0">Keranjang Kandidat (Shortlist)</h2>
-                <button class="btn btn-success" onclick="exportCSV()"><i class="fas fa-file-excel"></i> Export CSV</button>
-            </div>
-            <div class="row" id="shortlistContainer">
-                <p class="text-muted">Belum ada tenant yang disimpan.</p>
+                <div class="row g-4" id="shortlistContainer">
+                    <div class="col-12 text-center p-5 rounded-4" style="border: 2px dashed var(--border-color); background: var(--bg-card);">
+                        <i class="fas fa-ghost fa-3x mb-3 text-muted"></i>
+                        <h5 class="fw-bold">Keranjang masih kosong nih 🌬️</h5>
+                        <p class="small" style="color: var(--text-muted);">Simpan tenant favoritmu ke sini biar gampang diekspor nanti.</p>
+                    </div>
+                </div>
             </div>
         </div>
-
+        
+        <!-- GAYA 2: STARTUP / SAAS -->
+        <footer class="mt-5 pt-4 pb-3 border-top d-flex flex-column flex-md-row justify-content-between align-items-center" style="border-color: var(--border-color) !important; color: var(--text-muted); font-size: 0.9rem;">
+            <div class="mb-2 mb-md-0">
+                <strong>BoothFinder</strong> &copy; 2026
+            </div>
+            <div>
+                <span class="badge bg-secondary">Powered by Flask & TF-IDF</span>
+            </div>
+        </footer>
     </div>
 </div>
 
-<button id="compareBtn" class="btn btn-warning btn-lg shadow rounded-pill" onclick="showCompareModal()">
-    <i class="fas fa-balance-scale"></i> Bandingkan (<span id="compareCount">0</span>)
-</button>
+<button id="compareBtn" onclick="showCompareModal()"><i class="fas fa-balance-scale me-2"></i>Bandingkan (<span id="compareCount">0</span>)</button>
 
 <div class="modal fade" id="tenantModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold" id="modalTitle">Nama Tenant</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold logo-gradient" id="modalTitle">Nama Tenant</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: var(--bs-theme-close-white);"></button>
             </div>
-            <div class="modal-body">
-                <span class="badge bg-info mb-3" id="modalSektor">Sektor</span>
-                <p class="text-muted mb-1">Rata-rata Harga:</p>
-                <h4 class="fw-bold text-success mb-3" id="modalHarga">Rp0</h4>
-                
-                <h6 class="fw-bold border-bottom pb-2">📋 Metrik Operasional</h6>
-                <div id="operasionalData" class="mb-3">
+            <div class="modal-body p-4 pt-2">
+                <span class="badge bg-primary mb-3 px-3 py-2 rounded-pill" id="modalSektor">Sektor</span>
+                <div class="d-flex justify-content-between align-items-end mb-4">
+                    <div>
+                        <p class="mb-1 text-uppercase small" style="color: var(--text-muted); font-weight: 600;">Estimasi Harga</p>
+                        <h2 class="fw-bold mb-0" id="modalHarga" style="color: var(--brand-blue);">Rp0</h2>
                     </div>
-
-                <h6 class="fw-bold border-bottom pb-2">🎯 Skor Kemiripan Sistem</h6>
-                <div class="progress" style="height: 25px;">
-                    <div id="modalScoreBar" class="progress-bar bg-success" role="progressbar" style="width: 0%;">0%</div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                
+                <div class="p-3 rounded-4 mb-4" style="background-color: var(--bg-main); border: 1px solid var(--border-color);">
+                    <h6 class="fw-bold border-bottom pb-2 mb-3" style="border-color: var(--border-color) !important;"><i class="fas fa-clipboard-check text-warning me-2"></i>Info Operasional</h6>
+                    <div id="operasionalData" class="small" style="color: var(--text-muted);">
+                        </div>
+                </div>
+
+                <h6 class="fw-bold mb-2"><i class="fas fa-crosshairs text-danger me-2"></i>Akurasi Relevansi</h6>
+                <div class="progress" style="height: 24px; background-color: var(--bg-main); border-radius: 12px; border: 1px solid var(--border-color);">
+                    <div id="modalScoreBar" class="progress-bar bg-success progress-bar-striped progress-bar-animated" style="width: 0%; font-weight: 700; font-size: 0.9rem;">0%</div>
+                </div>
             </div>
         </div>
     </div>
@@ -187,237 +356,173 @@
 
 <div class="modal fade" id="compareModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title fw-bold"><i class="fas fa-balance-scale"></i> Kompilasi Tenant</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header border-0 pb-0" style="background: linear-gradient(135deg, #2576da, #184ad6);">
+                <h5 class="modal-title fw-bold text-white mb-3 mt-2 ms-2"><i class="fas fa-balance-scale me-2"></i> Kompilasi Head-to-Head</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <div class="row" id="compareContent">
-                    </div>
+            <div class="modal-body p-0">
+                <div class="row g-0" id="compareContent"></div>
             </div>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    let currentResults = [];
-    let shortlistedTenants = [];
+    let currentResults = []; 
+    let shortlistedTenants = []; 
     let compareList = [];
+    let chartsRendered = false;
 
-    // 1. Logika Navigasi Halaman (Sidebar)
-    function switchView(viewId) {
+    // Pembulatan Harga
+    function formatRoundedPrice(p) { 
+        let n = parseFloat(p); 
+        return isNaN(n) ? "Rp0" : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Math.round(n/500)*500); 
+    }
+    
+    // Tema Switch
+    function toggleTheme() { 
+        document.documentElement.setAttribute('data-bs-theme', document.getElementById('themeToggle').checked ? 'dark' : 'light'); 
+        if(chartsRendered) initCharts(); 
+    }
+    function toggleMobileSidebar() { document.getElementById('sidebar').classList.toggle('show'); }
+    function syncPrice(val, fromInput=false) { if(fromInput) document.getElementById('priceRange').value = val; else document.getElementById('priceInput').value = val; }
+    
+    // SPA Routing
+    function switchView(v) {
         document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-        
-        document.getElementById(viewId).classList.add('active');
+        document.getElementById(v).classList.add('active'); 
         event.currentTarget.classList.add('active');
-        
-        if(viewId === 'shortlist') renderShortlist();
+        if(window.innerWidth <= 768) toggleMobileSidebar();
+        if(v === 'eksplorasi' && !chartsRendered) fetchStatsAndRenderCharts();
     }
 
-    // 2. Logika Suggestion Chips
+    // Fungsi klik Suggestion Chips
     function setQuery(text) {
         document.getElementById('query').value = text;
         document.getElementById('searchForm').dispatchEvent(new Event('submit'));
     }
 
-    // 3. Logika Hybrid Slider Harga
-    function syncPrice(val, fromInput = false) {
-        if(fromInput) {
-            document.getElementById('priceRange').value = val;
-        } else {
-            document.getElementById('priceInput').value = val;
-        }
+    // API Stats Eksplorasi
+    function fetchStatsAndRenderCharts() {
+        fetch('/api/stats').then(res => res.json()).then(data => {
+            if(data.error) { document.getElementById('tableLoadingText').innerHTML = `<span class="text-danger">Error: ${data.error}</span>`; return; }
+            initCharts(data);
+            const tbody = document.getElementById('catalogTableBody'); tbody.innerHTML = '';
+            data.preview.forEach((row, i) => {
+                tbody.innerHTML += `<tr><td class="py-3">${i+1}</td><td class="fw-bold py-3">${row.nama_tenant}</td><td class="py-3"><span class="badge ${row.sektor.includes('F&B')?'bg-danger':'bg-primary'}">${row.sektor}</span></td><td class="fw-bold py-3" style="color: var(--brand-blue);">${formatRoundedPrice(row.harga)}</td></tr>`;
+            });
+            chartsRendered = true;
+        }).catch(err => { document.getElementById('tableLoadingText').innerHTML = `<span class="text-danger">Gagal menghubungi Server! Pastikan app.py menyala.</span>`; });
     }
 
-    // 4. Proses Pencarian (Fetch ke Flask)
+    // Render Grafik Chart.js
+    let pieChartInstance, barChartInstance;
+    function initCharts(apiData) {
+        const textColor = document.getElementById('themeToggle').checked ? '#F8F9FA' : '#D48735';
+        const sData = apiData ? Object.values(apiData.sektor) : pieChartInstance.data.datasets[0].data;
+        const hData = apiData ? Object.values(apiData.harga_dist) : barChartInstance.data.datasets[0].data;
+        if(pieChartInstance) pieChartInstance.destroy(); if(barChartInstance) barChartInstance.destroy();
+        const opts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: textColor, font: {family: "'Inter', sans-serif"} } } } };
+        pieChartInstance = new Chart(document.getElementById('pieChart'), { type: 'doughnut', data: { labels: ['Food & Beverage', 'Fashion & Lifestyle'], datasets: [{ data: sData, backgroundColor: ['#E31218', '#252FF7'], borderWidth: 0 }] }, options: { ...opts, plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }});
+        barChartInstance = new Chart(document.getElementById('barChart'), { type: 'bar', data: { labels: ['< Rp25k', 'Rp25k - 50k', 'Rp50k - 100k', '> Rp100k'], datasets: [{ data: hData, backgroundColor: '#D15E11', borderRadius: 8 }] }, options: { ...opts, scales: { x: { ticks: { color: textColor } }, y: { ticks: { color: textColor } } }, plugins: { legend: { display: false } } }});
+    }
+
+    // Submit Rekomendasi
     document.getElementById('searchForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        const query = document.getElementById('query').value;
-        const price_limit = document.getElementById('priceInput').value;
-        const sektor = document.getElementById('sektor').value;
-
-        document.getElementById('resultsArea').style.display = 'none';
-        document.getElementById('loading').style.display = 'block';
-
-        fetch('/api/recommend', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query, price_limit, sektor })
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('loading').style.display = 'none';
-            if (data.recommendations) {
-                currentResults = data.recommendations;
-                document.getElementById('resultsArea').style.display = 'block';
-                renderResults(); 
-            }
-        }).catch(err => alert("Terjadi kesalahan server!"));
+        document.getElementById('resultsArea').style.display = 'none'; document.getElementById('loading').classList.remove('d-none');
+        fetch('/api/recommend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: document.getElementById('query').value, price_limit: document.getElementById('priceInput').value, sektor: document.getElementById('sektor').value }) })
+        .then(res => res.json()).then(data => {
+            document.getElementById('loading').classList.add('d-none');
+            if(data.error) return alert("Error AI: " + data.error);
+            currentResults = data.recommendations || [];
+            document.getElementById('resultsArea').style.display = 'block';
+            if (currentResults.length === 0) { document.getElementById('resultsContainer').innerHTML = '<div class="col-12 text-center p-5"><i class="fas fa-search-minus fa-3x text-muted mb-3"></i><h5 class="fw-bold">Tidak ada kecocokan</h5><p class="text-muted">Perlebar limit harga atau ubah kata kuncinya.</p></div>'; } 
+            else { renderResults(); }
+        }).catch(err => { document.getElementById('loading').classList.add('d-none'); alert("Server gagal merespon!"); });
     });
 
-    // 5. Render Hasil Pencarian dengan Fitur Sorting
+    // Tampilkan Hasil
     function renderResults() {
-        const container = document.getElementById('resultsContainer');
-        const sortMode = document.getElementById('sortOption').value;
-        container.innerHTML = '';
-        
-        let displayData = [...currentResults];
-        if (sortMode === 'harga_murah') displayData.sort((a, b) => a.harga - b.harga);
-        if (sortMode === 'harga_mahal') displayData.sort((a, b) => b.harga - a.harga);
-
-        displayData.forEach((item, index) => {
-            const hrg = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.harga);
+        const container = document.getElementById('resultsContainer'); container.innerHTML = '';
+        currentResults.forEach(item => {
             const isSaved = shortlistedTenants.find(t => t.nama_tenant === item.nama_tenant);
-            
+            const isChecked = compareList.find(t => t.nama_tenant === item.nama_tenant) ? 'checked' : '';
             container.innerHTML += `
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card card-tenant shadow-sm border-0 h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="badge ${item.sektor === 'F&B' ? 'bg-danger' : 'bg-success'}">${item.sektor}</span>
-                                <input class="form-check-input" type="checkbox" onchange="toggleCompare('${item.nama_tenant}')">
-                            </div>
-                            <h5 class="fw-bold">${item.nama_tenant}</h5>
-                            <p class="text-muted mb-1"><i class="fas fa-tag"></i> ${hrg}</p>
-                            
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <button class="btn btn-sm btn-outline-primary" onclick="showDetail('${item.nama_tenant}')">Detail</button>
-                                <button class="btn btn-sm ${isSaved ? 'btn-success' : 'btn-outline-secondary'}" 
-                                        onclick="toggleShortlist('${item.nama_tenant}')">
-                                    <i class="fas fa-bookmark"></i> ${isSaved ? 'Tersimpan' : 'Simpan'}
-                                </button>
-                            </div>
+                <div class="col-md-6 col-lg-4"><div class="card card-tenant h-100 p-4">
+                    <div class="d-flex justify-content-between mb-3 align-items-center">
+                        <span class="badge ${item.sektor.includes('F&B')?'bg-danger':'bg-primary'} px-3 py-2 rounded-pill">${item.sektor}</span>
+                        <div class="form-check form-switch m-0" title="Bandingkan">
+                            <input class="form-check-input" style="cursor: pointer;" type="checkbox" role="switch" ${isChecked} onchange="toggleCompare('${item.nama_tenant}')">
                         </div>
                     </div>
-                </div>
-            `;
+                    <h5 class="fw-bold mb-2">${item.nama_tenant}</h5>
+                    <p class="fw-bold fs-5 mb-4" style="color: var(--brand-blue);">${formatRoundedPrice(item.harga)}</p>
+                    <div class="d-flex gap-2 mt-auto">
+                        <button class="btn btn-sm btn-outline-secondary w-50 fw-bold" onclick="showDetail('${item.nama_tenant}')">Info Detail👀</button>
+                        <button class="btn btn-sm ${isSaved?'btn-success':'btn-primary'} w-50" onclick="toggleShortlist('${item.nama_tenant}')">${isSaved?'<i class="fas fa-check"></i>':'Simpan'}</button>
+                    </div>
+                </div></div>`;
         });
     }
 
-    // 6. Fitur Shortlist (Keranjang)
-    function toggleShortlist(nama) {
-        const item = currentResults.find(t => t.nama_tenant === nama);
-        const idx = shortlistedTenants.findIndex(t => t.nama_tenant === nama);
-        
-        if(idx > -1) shortlistedTenants.splice(idx, 1);
-        else shortlistedTenants.push(item);
-        
-        document.getElementById('shortlistBadge').innerText = shortlistedTenants.length;
-        renderResults(); 
-    }
-
-    function renderShortlist() {
-        const container = document.getElementById('shortlistContainer');
-        if(shortlistedTenants.length === 0) {
-            container.innerHTML = '<p class="text-muted">Belum ada tenant yang disimpan.</p>';
-            return;
-        }
-        container.innerHTML = '';
-        shortlistedTenants.forEach(item => {
-            const hrg = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.harga);
-            container.innerHTML += `
-                <div class="col-md-4 mb-3">
-                    <div class="card border-success border-2 shadow-sm">
-                        <div class="card-body">
-                            <h6 class="fw-bold">${item.nama_tenant}</h6>
-                            <p class="mb-0 text-muted">${hrg}</p>
-                            <button class="btn btn-sm btn-danger mt-2" onclick="toggleShortlist('${item.nama_tenant}'); renderShortlist();">Hapus</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-
-    // 7. Pop-up Detail & Metrik Operasional
+    // Modal Detail (SUDAH FIX)
     function showDetail(nama) {
         const item = currentResults.find(t => t.nama_tenant === nama);
         document.getElementById('modalTitle').innerText = item.nama_tenant;
+        document.getElementById('modalSektor').className = `badge mb-3 px-3 py-2 rounded-pill ${item.sektor.includes('F&B')?'bg-danger':'bg-primary'}`;
         document.getElementById('modalSektor').innerText = item.sektor;
-        document.getElementById('modalHarga').innerText = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.harga);
+        document.getElementById('modalHarga').innerText = formatRoundedPrice(item.harga);
         
-        const score = (item.score * 100).toFixed(1);
+        // Akurasi Bar
+        const score = Math.round(item.score * 100);
         document.getElementById('modalScoreBar').style.width = score + '%';
-        document.getElementById('modalScoreBar').innerText = score + '% Relevan';
+        document.getElementById('modalScoreBar').innerText = score + '% Kecocokan';
 
-        let operasionalHTML = '';
-        if(item.sektor === 'F&B') {
-            operasionalHTML = `
-                <ul class="list-unstyled">
-                    <li><i class="fas fa-check-circle text-success"></i> Kapasitas Harian: <strong>Estimasi 200 - 300 porsi</strong></li>
-                    <li><i class="fas fa-box text-success"></i> Standar Pengemasan: <strong>Aman (Take-away ready)</strong></li>
-                    <li><i class="fas fa-bolt text-warning"></i> Waktu Penyajian: <strong>~5 Menit/Pesanan</strong></li>
-                </ul>`;
-        } else {
-            operasionalHTML = `
-                <ul class="list-unstyled">
-                    <li><i class="fas fa-ruler-combined text-primary"></i> Ketersediaan Ukuran: <strong>Lengkap (S - XL)</strong></li>
-                    <li><i class="fas fa-store text-primary"></i> Kebutuhan Booth: <strong>Meja Display & Gantungan</strong></li>
-                </ul>`;
-        }
-        document.getElementById('operasionalData').innerHTML = operasionalHTML;
-        
+        // Konten Operasional (Stok, Waktu, Deskripsi Simulasi)
+        let ops = item.sektor.includes('F&B') ? 
+            `<ul class="mb-0 ps-3 gap-2 d-flex flex-column" style="list-style-type: none; padding-left: 0 !important;">
+                <li><i class="fas fa-box text-info w-20px"></i> Stok Harian: <strong>~200 Porsi</strong></li>
+                <li><i class="fas fa-stopwatch text-warning w-20px"></i> Penyajian: <strong>< 5 Menit</strong></li>
+                <li><i class="fas fa-info-circle text-primary w-20px"></i> Keterangan: Siap layani antrean festival padat.</li>
+            </ul>` : 
+            `<ul class="mb-0 ps-3 gap-2 d-flex flex-column" style="list-style-type: none; padding-left: 0 !important;">
+                <li><i class="fas fa-ruler-combined text-info w-20px"></i> Size Ready: <strong>S, M, L, XL</strong></li>
+                <li><i class="fas fa-store text-warning w-20px"></i> Kebutuhan Booth: <strong>Meja & Gantungan</strong></li>
+                <li><i class="fas fa-info-circle text-primary w-20px"></i> Keterangan: Membawa cermin fitting *portable*.</li>
+            </ul>`;
+        document.getElementById('operasionalData').innerHTML = ops;
         new bootstrap.Modal(document.getElementById('tenantModal')).show();
     }
 
-    // 8. Fitur Kompilasi (Head-to-Head Compare)
+    // Komparasi
     function toggleCompare(nama) {
         const item = currentResults.find(t => t.nama_tenant === nama);
         const idx = compareList.findIndex(t => t.nama_tenant === nama);
-        
-        if(idx > -1) compareList.splice(idx, 1);
-        else if(compareList.length < 2) compareList.push(item);
-        else {
-            alert("Maksimal hanya bisa membandingkan 2 tenant sekaligus!");
-            event.target.checked = false;
-        }
-        
-        const btn = document.getElementById('compareBtn');
+        if(idx > -1) compareList.splice(idx, 1); else if(compareList.length < 2) compareList.push(item); else { alert("Cukup 2 tenant aja ya buat dibandingin! 🤝"); event.target.checked = false; return; }
         document.getElementById('compareCount').innerText = compareList.length;
-        btn.style.display = compareList.length > 0 ? 'block' : 'none';
+        document.getElementById('compareBtn').style.display = compareList.length > 0 ? 'block' : 'none';
     }
 
     function showCompareModal() {
-        if(compareList.length !== 2) return alert("Pilih minimal 2 tenant untuk dibandingkan!");
-        
-        let html = '';
-        compareList.forEach(item => {
-            const hrg = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.harga);
-            const score = (item.score * 100).toFixed(1);
-            html += `
-                <div class="col-6 border-end">
-                    <h4 class="fw-bold text-center">${item.nama_tenant}</h4>
-                    <hr>
-                    <p><strong>Kecocokan AI:</strong> ${score}%</p>
-                    <p><strong>Sektor:</strong> ${item.sektor}</p>
-                    <p><strong>Harga Rata-rata:</strong> <span class="text-danger fw-bold">${hrg}</span></p>
-                </div>
-            `;
-        });
-        document.getElementById('compareContent').innerHTML = html;
-        new bootstrap.Modal(document.getElementById('compareModal')).show();
+        if(compareList.length !== 2) return alert("Pilih satu tenant lagi buat dibandingin!");
+        let html = ''; compareList.forEach((item, index) => {
+            html += `<div class="col-6 p-4 ${index===0?'border-end':''}" style="border-color: var(--border-color) !important;">
+                <h5 class="fw-bold text-center logo-gradient mb-4">${item.nama_tenant}</h5>
+                <div class="text-center mb-4 p-3 rounded-4" style="background: rgba(76,201,240,0.1);"><small class="text-muted fw-bold d-block mb-1">Skor AI</small><h2 class="text-success fw-bold mb-0">${Math.round(item.score*100)}%</h2></div>
+                <p class="mb-1 text-muted small fw-bold">Sektor</p><p class="fw-bold mb-3">${item.sektor}</p>
+                <p class="mb-1 text-muted small fw-bold">Harga Rata-rata</p><p class="fw-bold fs-5" style="color: var(--brand-blue);">${formatRoundedPrice(item.harga)}</p>
+            </div>`;
+        }); document.getElementById('compareContent').innerHTML = html; new bootstrap.Modal(document.getElementById('compareModal')).show();
     }
 
-    // 9. Fitur Export ke CSV
-    function exportCSV() {
-        if(shortlistedTenants.length === 0) return alert("Keranjang kosong!");
-        
-        let csvContent = "data:text/csv;charset=utf-8,Nama Tenant,Sektor,Harga Rata-rata\n";
-        shortlistedTenants.forEach(row => {
-            csvContent += `${row.nama_tenant},${row.sektor},${row.harga}\n`;
-        });
-        
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "Laporan_Kurasi_Tenant.csv");
-        document.body.appendChild(link);
-        link.click();
-    }
+    // Shortlist
+    function toggleShortlist(nama) { const item = currentResults.find(t => t.nama_tenant === nama); const idx = shortlistedTenants.findIndex(t => t.nama_tenant === nama); if(idx > -1) shortlistedTenants.splice(idx, 1); else shortlistedTenants.push(item); document.getElementById('shortlistBadge').innerText = shortlistedTenants.length; renderResults(); renderShortlist(); }
+    function renderShortlist() { const container = document.getElementById('shortlistContainer'); if(shortlistedTenants.length === 0) { container.innerHTML = '<div class="col-12 text-center p-5 rounded-4" style="border: 2px dashed var(--border-color);"><i class="fas fa-ghost fa-3x mb-3 text-muted"></i><h5 class="fw-bold">Keranjang kosong</h5></div>'; return; } container.innerHTML = ''; shortlistedTenants.forEach(item => { container.innerHTML += `<div class="col-md-6"><div class="card p-3 d-flex flex-row justify-content-between align-items-center" style="border-left: 5px solid var(--brand-accent);"><div><h6 class="fw-bold mb-1">${item.nama_tenant}</h6><p class="mb-0 fw-bold" style="color: var(--brand-blue);">${formatRoundedPrice(item.harga)}</p></div><button class="btn btn-sm btn-outline-danger" onclick="toggleShortlist('${item.nama_tenant}')"><i class="fas fa-trash"></i></button></div></div>`; }); }
+    function exportCSV() { if(shortlistedTenants.length===0) return alert("Keranjang kosong!"); let csv = "data:text/csv;charset=utf-8,Nama,Sektor,Harga\n"; shortlistedTenants.forEach(r => csv += `${r.nama_tenant},${r.sektor},${Math.round(r.harga/500)*500}\n`); const l = document.createElement("a"); l.href = encodeURI(csv); l.download = "Laporan_Kurasi_Tenant.csv"; document.body.appendChild(l); l.click(); }
 </script>
 </body>
 </html>

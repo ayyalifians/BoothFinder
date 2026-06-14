@@ -17,10 +17,32 @@ try:
 except Exception as e:
     print(f"Gagal memuat model: {e}")
 
-# --- 2. ROUTING FRONTEND ---
+# --- 2. ROUTING FRONTEND (SUDAH DIMODIFIKASI UNTUK KPI CARD) ---
 @app.route('/')
 def home():
-    return render_template('index.html')
+    try:
+        # 1. Hitung jumlah tenant unik secara dinamis dari model yang dimuat
+        jumlah_tenant = len(df_tenant)
+        
+        # 2. Definisikan jumlah produk mentah (Hardcoded untuk menghemat RAM server)
+        # Angka ini kita kirim ke index.html agar dinamis di sisi frontend
+        jumlah_produk = 15232
+        
+        # Silakan ubah angka pembagian di bawah ini sesuai dengan proporsi data mentah aslimu!
+        # (Misal: dari 15.232, berapa F&B dan berapa Fashion)
+        produk_fb = 14500      # Ganti dengan angka aslinya
+        produk_fashion = 732   # Ganti dengan angka aslinya
+
+        # Lempar variabel ke Jinja2 HTML
+        return render_template('index.html', 
+                               jumlah_tenant=jumlah_tenant,
+                               jumlah_produk=jumlah_produk,
+                               produk_fb=produk_fb,
+                               produk_fashion=produk_fashion)
+                               
+    except Exception as e:
+        print("ERROR ROUTING HOME:", str(e))
+        return render_template('index.html') # Fallback jika terjadi error
 
 # --- 3. ROUTING API PENCARIAN ---
 @app.route('/api/recommend', methods=['POST'])
